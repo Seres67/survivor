@@ -1,16 +1,7 @@
-use std::{borrow::BorrowMut, process::exit, time::Duration};
+use bevy::{prelude::*, time::Stopwatch, transform::components::Transform};
+use player::{Player, PlayerPlugin};
 
-use bevy::{
-    math::NormedVectorSpace, prelude::*, time::Stopwatch, transform::components::Transform,
-};
-
-#[derive(Component)]
-struct Player {
-    pub health: i32,
-    pub xp: i32,
-    pub lvl: i16,
-    pub weapons: Vec<Weapon>,
-}
+mod player;
 
 #[derive(Component)]
 struct Enemy {
@@ -23,46 +14,6 @@ struct Weapon {
     pub damage: i32,
     pub range: f32,
     pub timer: Stopwatch,
-}
-
-const PLAYER_SPEED: f32 = 100.0;
-
-fn move_player(
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut player: Query<&mut Transform, With<Player>>,
-    time: Res<Time>,
-) {
-    let mut horizontal = 0.0;
-    let mut vertical = 0.0;
-    if keyboard_input.pressed(KeyCode::KeyA) {
-        horizontal += -1.0;
-    }
-    if keyboard_input.pressed(KeyCode::KeyD) {
-        horizontal += 1.0;
-    }
-    if keyboard_input.pressed(KeyCode::KeyW) {
-        vertical += 1.0;
-    }
-    if keyboard_input.pressed(KeyCode::KeyS) {
-        vertical += -1.0;
-    }
-
-    let mut player_transform = player.single_mut();
-    let new_x = player_transform.translation.x + horizontal * PLAYER_SPEED * time.delta_seconds();
-    let new_y = player_transform.translation.y + vertical * PLAYER_SPEED * time.delta_seconds();
-    //TODO: check pos to be inside the screen
-    player_transform.translation = Vec3 {
-        x: new_x,
-        y: new_y,
-        z: -1.0,
-    };
-}
-
-fn check_player_death(player: Query<&Player>) {
-    if player.single().health <= 0 {
-        println!("player dead");
-        exit(0);
-    }
 }
 
 fn check_enemy_death(
@@ -106,6 +57,8 @@ fn get_targets(
             return;
         }
         if let Some(mut enemy) = closest_enemy {
+            //TODO: spawn bullets
+            // spawn_bullet();
             enemy.0.health -= w;
         }
     }
@@ -120,24 +73,6 @@ fn tick_weapons(mut player: Query<&mut Player>, time: Res<Time>) {
 
 fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default());
-    commands.spawn((
-        Player {
-            health: 100,
-            lvl: 1,
-            xp: 0,
-            weapons: vec![Weapon {
-                speed: 1.0,
-                damage: 12,
-                range: 400.0,
-                timer: Stopwatch::new(),
-            }],
-        },
-        SpriteBundle {
-            texture: assets.load("player.png"),
-            transform: Transform::from_xyz(0.0, 0.0, -1.0),
-            ..default()
-        },
-    ));
     for _ in 0..1 {
         commands.spawn((
             SpriteBundle {
@@ -154,16 +89,11 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins((DefaultPlugins, PlayerPlugin))
         .add_systems(Startup, setup)
         .add_systems(
             Update,
-            (
-                move_player,
-                check_player_death,
-                (get_targets, check_enemy_death).chain(),
-                tick_weapons,
-            ),
+            ((get_targets, check_enemy_death).chain(), tick_weapons),
         )
         .run();
 }
