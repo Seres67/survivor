@@ -19,7 +19,7 @@ fn move_player(
     player_transform.translation = Vec3 {
         x: new_x,
         y: new_y,
-        z: -1.0,
+        z: 1.0,
     };
 }
 

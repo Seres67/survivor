@@ -1,6 +1,11 @@
+// use ai::EnemyAiPlugin;
 use bevy::prelude::*;
+use spawn::EnemySpawnPlugin;
 
-use crate::player::Player;
+use crate::{player::Player, ui::health::EnemyHealthUi};
+
+pub mod ai;
+pub mod spawn;
 
 #[derive(Component)]
 pub struct Enemy {
@@ -22,27 +27,18 @@ fn check_enemy_death(
     }
 }
 
-fn spawn_enemies(mut commands: Commands, assets: Res<AssetServer>) {
-    commands.spawn(Camera2dBundle::default());
-    for _ in 0..1 {
-        commands.spawn((
-            SpriteBundle {
-                texture: assets.load("player.png"),
-                ..default()
-            },
-            Enemy {
-                health: 100,
-                xp_drop: 10,
-            },
-        ));
-    }
+#[derive(Bundle)]
+struct EnemyBundle {
+    sprite: SpriteBundle,
+    enemy: Enemy,
+    ui: EnemyHealthUi,
 }
 
 pub struct EnemyPlugin;
 
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_enemies)
+        app.add_plugins((EnemyAiPlugin, EnemySpawnPlugin))
             .add_systems(Update, check_enemy_death);
     }
 }

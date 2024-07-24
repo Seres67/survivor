@@ -48,7 +48,7 @@ fn spawn_player(mut commands: Commands, assets: Res<AssetServer>) {
         },
         SpriteBundle {
             texture: assets.load("player.png"),
-            transform: Transform::from_xyz(0.0, 0.0, -1.0),
+            transform: Transform::from_xyz(0.0, 0.0, 1.0),
             ..default()
         },
     ));
